@@ -43,3 +43,9 @@ async def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db
     db.commit()
     db.refresh(new_record)
     return {"message": "Success", "id": new_record.id}
+
+
+@app.get("/files")
+async def list_files(db: Session = Depends(get_db)):
+    files = db.query(models.FileRecord).all()
+    return files
