@@ -1,5 +1,5 @@
 venv/
 __pycache__/
-app/files.db
+files.db
 app/uploads
 .env
