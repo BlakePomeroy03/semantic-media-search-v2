@@ -3,6 +3,8 @@ from fastapi import FastAPI, UploadFile, File, Depends
 from app.db import engine, Base, SessionLocal
 import app.models as models
 from sqlalchemy.orm import Session
+from contextlib import asynccontextmanager
+from sentence_transformers import SentenceTransformer
 
 
 app = FastAPI()
@@ -10,6 +12,19 @@ app = FastAPI()
 Base.metadata.create_all(bind=engine)
 
 os.makedirs("uploads", exist_ok = True)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("Loading Model")
+
+    app.state.model = SentenceTransformer
+
+    print("Done")
+
+    yield
+
+
+app = FastAPI(lifespan = lifespan)
 
 @app.get("/health")
 def health():
