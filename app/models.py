@@ -7,4 +7,5 @@ class FileRecord(Base):
     id = Column(Integer, primary_key=True, index=True)
     filename = Column(String, index=True)
     filepath = Column(String, unique=True)
+    embedding = Column(String)
     size = Column(Integer)
