@@ -1,5 +1,8 @@
 import os
-from fastapi import FastAPI, UploadFile, File, Depends
+import io
+import json
+from fastapi import FastAPI, UploadFile, File, Depends, Request
+from PIL import Image
 from app.db import engine, Base, SessionLocal
 import app.models as models
 from sqlalchemy.orm import Session
@@ -17,12 +20,11 @@ os.makedirs("uploads", exist_ok = True)
 async def lifespan(app: FastAPI):
     print("Loading Model")
 
-    app.state.model = SentenceTransformer
+    app.state.model = SentenceTransformer('clip-ViT-B-32')
 
     print("Done")
 
     yield
-
 
 app = FastAPI(lifespan = lifespan)
 
@@ -40,24 +42,38 @@ def get_db():
     
 
 @app.post("/upload")
-async def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def upload_file(request: Request, file: UploadFile, db: Session = Depends(get_db)):
+
+    contents = await file.read()
+
+    image = Image.open(io.BytesIO(contents)).convert('RGB')
+
+    model = request.app.state.model
+
+    embedding = model.encode([image])[0].tolist()
+
+    embedding_json = json.dumps(embedding)
+
+    print(f"File {file.filename} vector: {embedding[:5]}...")
+
     file_location = f"uploads/{file.filename}"
 
     with open(file_location, "wb") as buffer:
-        buffer.write(await file.read())
+        buffer.write(contents)
 
     size = os.path.getsize(file_location)
 
     new_record = models.FileRecord(
         filename = file.filename,
         filepath = file_location,
+        embedding = embedding_json,
         size = size
     )
 
     db.add(new_record)
     db.commit()
     db.refresh(new_record)
-    return {"message": "Success", "id": new_record.id}
+    return {"filename": file.filename, "message": "Vector extracted successfully!"}
 
 
 @app.get("/files")
