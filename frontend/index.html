@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 { margin-bottom: 30px; font-weight: 600; letter-spacing: -0.5px;}
+        .search-container {
+            display: flex;
+            width: 100%;
+            max-width: 600px;
+            gap: 10px;
+            margin-bottom: 40px;
+        }
+        input {
+            flex-grow: 1;
+            padding: 15px 20px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            background-color: #1e1e1e;
+            color: white;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input:focus { border-color: #5c6bc0; }
+        button {
+            padding: 15px 25px;
+            border-radius: 8px;
+            border: none;
+            background-color: #5c6bc0;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        button:hover { background-color: #3f51b5; }
+        
+        #gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+        }
+        .image-card {
+            background-color: #1e1e1e;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+        }
+        .image-card img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+        }
+        .image-info {
+            padding: 15px;
+            font-size: 14px;
+            color: #aaaaaa;
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Seaerch</h1>
+    
+    <div class="search-container">
+        <input type="text" id="searchInput" placeholder="Search your photos" onkeydown="if(event.key === 'Enter') executeSearch()">
+        <button onclick="executeSearch()">Search</button>
+    </div>
+
+    <div id="gallery">
+        </div>
+
+    <script>
+        async function executeSearch() {
+            const query = document.getElementById('searchInput').value;
+            const gallery = document.getElementById('gallery');
+            
+            if (!query) return;
+
+            gallery.innerHTML = '<p style="color: #888;">Searching</p>';
+
+            try {
+                const response = await fetch(`/search?query=${encodeURIComponent(query)}`);
+                const results = await response.json();
+
+                gallery.innerHTML = '';
+
+                if (results.length === 0) {
+                    gallery.innerHTML = '<p>No matching images found.</p>';
+                    return;
+                }
+
+                results.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'image-card';
+                    card.innerHTML = `
+                        <img src="/images/${item.filename}" alt="${item.filename}">
+                        <div class="image-info">
+                            <span>${item.filename}</span>
+                            <span style="color: #5c6bc0; font-weight: bold;">${(item.score * 100).toFixed(1)}%</span>
+                        </div>
+                    `;
+                    gallery.appendChild(card);
+                });
+
+            } catch (error) {
+                console.error("Search failed:", error);
+                gallery.innerHTML = '<p style="color: #ff5252;">Error communicating with the neural network.</p>';
+            }
+        }
+    </script>
+</body>
+</html>
