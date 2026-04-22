@@ -9,6 +9,8 @@ from sqlalchemy.orm import Session
 from contextlib import asynccontextmanager
 from sentence_transformers import SentenceTransformer, util
 from app.routes import search
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 Base.metadata.create_all(bind=engine)
 
@@ -45,6 +47,8 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(lifespan = lifespan)
+
+app.mount("/images", StaticFiles(directory="uploads"), name = "images")
 
 app.include_router(search.router)
 
@@ -91,3 +95,7 @@ async def upload_file(request: Request, file: UploadFile, db: Session = Depends(
 async def list_files(db: Session = Depends(get_db)):
     files = db.query(models.FileRecord).all()
     return files
+
+@app.get("/")
+async def frontend():
+    return FileResponse("frontend/index.html")
