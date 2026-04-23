@@ -16,6 +16,25 @@
             align-items: center;
         }
         h1 { margin-bottom: 30px; font-weight: 600; letter-spacing: -0.5px;}
+
+        #dropZone {
+            width: 100%;
+            max-width: 600px;
+            height: 120px;
+            border: 2px dashed #5c6bc0;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 30px;
+            background-color: rgba(92, 107, 192, 0.05);
+            transition: all 0.2s ease;
+            cursor: pointer;
+            color: #888;
+        }
+        #dropZone.dragover { background-color: rgba(92, 107, 192, 0.2); border-color: #8c9eff; color: #8c9eff; }
+        #uploadStatus { margin-top: -20px; margin-bottom: 20px; font-size: 14px; color: #4caf50; display: none; }
+
         .search-container {
             display: flex;
             width: 100%;
@@ -79,7 +98,13 @@
 </head>
 <body>
 
-    <h1>Seaerch</h1>
+    <h1>Search</h1>
+    <div id="dropZone" onclick="document.getElementById('fileInput').click()">
+        Drag & Drop a photo here, or click to browse
+    </div>
+    <input type="file" id="fileInput" style="display: none;" accept="image/*" onchange="handleFileSelect(event)">
+    <div id="uploadStatus">Analyzing vector math...</div>
+        
     
     <div class="search-container">
         <input type="text" id="searchInput" placeholder="Search your photos" onkeydown="if(event.key === 'Enter') executeSearch()">
@@ -127,6 +152,51 @@
                 gallery.innerHTML = '<p style="color: #ff5252;">Error communicating with the neural network.</p>';
             }
         }
-    </script>
-</body>
+
+    const dropZone = document.getElementById('dropZone');
+        const uploadStatus = document.getElementById('uploadStatus');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, e => { e.preventDefault(); e.stopPropagation(); }, false);
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            if (e.dataTransfer.files.length > 0) uploadFile(e.dataTransfer.files[0]);
+        }, false);
+
+        function handleFileSelect(e) {
+            if (e.target.files.length > 0) uploadFile(e.target.files[0]);
+        }
+
+        async function uploadFile(file) {
+            if (!file.type.startsWith('image/')) { alert('Please upload an image file.'); return; }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            uploadStatus.style.display = 'block';
+            uploadStatus.style.color = '#8c9eff';
+            uploadStatus.innerText = `Extracting math for ${file.name}...`;
+
+            try {
+                const response = await fetch('/upload', { method: 'POST', body: formData });
+                if (response.ok) {
+                    uploadStatus.style.color = '#4caf50';
+                    uploadStatus.innerText = 'Upload successful!';
+                    setTimeout(() => uploadStatus.style.display = 'none', 3000);
+                } else { throw new Error('Server rejected file'); }
+            } catch (error) {
+                uploadStatus.style.color = '#ff5252';
+                uploadStatus.innerText = 'Upload failed.';
+            }
+        }
+</script></body>
 </html>
