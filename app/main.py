@@ -1,7 +1,7 @@
 import os
 import io
 import json
-from fastapi import FastAPI, UploadFile, File, Depends, Request
+from fastapi import FastAPI, UploadFile, File, Depends, Request, HTTPException
 from PIL import Image
 from app.db import engine, Base, SessionLocal,get_db
 import app.models as models
@@ -58,6 +58,9 @@ def health():
 
 @app.post("/upload")
 async def upload_file(request: Request, file: UploadFile, db: Session = Depends(get_db)):
+    
+    if file.filename in request.app.state.filenames:
+        raise HTTPException(status_code=409, detail="File already exists")
 
     contents = await file.read()
 

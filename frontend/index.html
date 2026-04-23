@@ -103,7 +103,7 @@
         Drag & Drop a photo here, or click to browse
     </div>
     <input type="file" id="fileInput" style="display: none;" accept="image/*" onchange="handleFileSelect(event)">
-    <div id="uploadStatus">Analyzing vector math...</div>
+    <div id="uploadStatus">Analyzing vector math</div>
         
     
     <div class="search-container">
@@ -130,7 +130,7 @@
                 gallery.innerHTML = '';
 
                 if (results.length === 0) {
-                    gallery.innerHTML = '<p>No matching images found.</p>';
+                    gallery.innerHTML = '<p>No matching images found</p>';
                     return;
                 }
 
@@ -149,7 +149,7 @@
 
             } catch (error) {
                 console.error("Search failed:", error);
-                gallery.innerHTML = '<p style="color: #ff5252;">Error communicating with the neural network.</p>';
+                gallery.innerHTML = '<p style="color: #ff5252;">Model Error</p>';
             }
         }
 
@@ -177,25 +177,30 @@
         }
 
         async function uploadFile(file) {
-            if (!file.type.startsWith('image/')) { alert('Please upload an image file.'); return; }
+            if (!file.type.startsWith('image/')) { alert('Please upload an image file'); return; }
 
             const formData = new FormData();
             formData.append('file', file);
 
             uploadStatus.style.display = 'block';
             uploadStatus.style.color = '#8c9eff';
-            uploadStatus.innerText = `Extracting math for ${file.name}...`;
+            uploadStatus.innerText = `Extracting math for ${file.name}`;
 
             try {
                 const response = await fetch('/upload', { method: 'POST', body: formData });
+                
                 if (response.ok) {
                     uploadStatus.style.color = '#4caf50';
-                    uploadStatus.innerText = 'Upload successful!';
+                    uploadStatus.innerText = 'Upload successful';
                     setTimeout(() => uploadStatus.style.display = 'none', 3000);
-                } else { throw new Error('Server rejected file'); }
+                } else { 
+                    const errorData = await response.json();
+                    
+                    throw new Error(errorData.detail); 
+                }
             } catch (error) {
                 uploadStatus.style.color = '#ff5252';
-                uploadStatus.innerText = 'Upload failed.';
+                uploadStatus.innerText = error.message;
             }
         }
 </script></body>
