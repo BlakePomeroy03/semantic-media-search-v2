@@ -88,6 +88,8 @@ async def upload_file(request: Request, file: UploadFile, db: Session = Depends(
     db.add(new_record)
     db.commit()
     db.refresh(new_record)
+    request.app.state.filenames.append(file.filename)
+    request.app.state.vectors.append(embedding)
     return {"filename": file.filename, "message": "Vector extracted successfully!"}
 
 
